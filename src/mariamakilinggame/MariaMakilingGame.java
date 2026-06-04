@@ -91,7 +91,7 @@ public class MariaMakilingGame extends PApplet {
             fill(255);
             textSize(14);
             textAlign(CENTER, CENTER);
-            text("Begin Journey", 400, 495);
+            text("Begin Journey", 500, 500);
         } 
         else if (stage == 1) {
         } 
@@ -104,10 +104,33 @@ public class MariaMakilingGame extends PApplet {
     }
 
     @Override
+    public void keyPressed() {
+        if (key == CODED) {
+            if (keyCode == LEFT) {
+                if (mariaCharacter.x > 50) {
+                    mariaCharacter.x -= 15; 
+                }
+            } else if (keyCode == RIGHT) {
+                if (mariaCharacter.x < 650) {
+                    mariaCharacter.x += 15; 
+                }
+            }
+        }
+    }
+
+    @Override
     public void mousePressed() {
         if (stage == 0) {
             if (startButton.isClicked(mouseX, mouseY)) {
                 stage = 1; 
+            }
+        }
+        else if (stage == 4) {
+            if (restartButton.isClicked(mouseX, mouseY)) {
+                reputation = 0;
+                mariaCharacter.x = 510; 
+                mariaCharacter.updateForm("images/maria.png");
+                stage = 0;
             }
         }
     }
