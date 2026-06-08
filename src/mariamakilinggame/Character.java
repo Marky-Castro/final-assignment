@@ -12,30 +12,38 @@ import processing.core.PImage;
  * @author 350309527
  */
 public class Character {
-    protected float x, y;
+    public float x;
+    public float y;
     protected PImage img;
+    protected PApplet p;
 
-    public void draw(PApplet app) {
-        if (img != null) {
-            app.image(img, x, y);
-        }
-    }
-}
-
-class Maria extends Character {
-    private PApplet app;
-
-    public Maria(PApplet p, float x, float y, String imagePath) {
-        this.app = p;
+    public Character(PApplet p, float x, float y, String imagePath) {
+        this.p = p;
         this.x = x;
         this.y = y;
         this.img = p.loadImage(imagePath);
     }
 
+    public void draw(PApplet p) {
+        if (img != null) {
+            p.image(img, x, y);
+        }
+    }
+
     public void updateForm(String newImagePath) {
-        this.img = app.loadImage(newImagePath);
+        this.img = p.loadImage(newImagePath);
+    }
+
+    public boolean isCollidingWith(float otherX, float otherY, float otherWidth, float otherHeight) {
+        boolean isLeftOfOtherRight = this.x < otherX + otherWidth;
+        boolean isRightOfOtherLeft = this.x + (img != null ? img.width : 100) > otherX;
+        boolean isAboveOtherBottom = this.y < otherY + otherHeight;
+        boolean isBelowOtherTop = this.y + (img != null ? img.height : 180) > otherY;
+
+        return isLeftOfOtherRight && isRightOfOtherLeft && isAboveOtherBottom && isBelowOtherTop;
     }
 }
+
 
 
 
