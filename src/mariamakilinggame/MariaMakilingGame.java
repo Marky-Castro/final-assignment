@@ -10,25 +10,29 @@ import processing.core.PImage;
  *
  * @author 350309527
  */
-
-
 public class MariaMakilingGame extends PApplet {
 
-    // Global version constant
+    // Version constant
     public static final String GAME_VERSION = "1.0.0";
 
-    // Game state variables
+    // Game track variables
     int stage = 0; 
     int reputation = 0;
     
-    // Character and image objects
+    //AI additions for typewriter effect
+    String currentStoryText = "";
+    String displayedStoryText = "";
+    int textCounter = 0;
+    int lastStageChecked = -1;
+    
+    // Images and character
     Character mariaCharacter; 
     PImage bgForest;
     PImage bgDrought;
     PImage villagerImg;
     PImage deerImg;
     
-    // Game buttons
+    // All game buttons
     Button startButton;
     Button c1Opt1, c1Opt2;
     Button c2Opt1, c2Opt2;
@@ -39,13 +43,13 @@ public class MariaMakilingGame extends PApplet {
         PApplet.main("mariamakilinggame.MariaMakilingGame");
     }
 
-    // Set window size
+    // Set screen size
     @Override
     public void settings() {
         size(800, 600); 
     }
 
-    // Load images and setup buttons
+    // Load files and set up buttons
     @Override
     public void setup() {
         background(255);
@@ -53,53 +57,58 @@ public class MariaMakilingGame extends PApplet {
         // Setup starting position for Maria
         mariaCharacter = new Character(this, 510, 120, "images/maria.png");
         
-        // Load background and character images
+        // Load background and character files
         bgForest = loadImage("images/bg_forest.png");
         bgDrought = loadImage("images/bg_drought.png");
         villagerImg = loadImage("images/villager.png");
         deerImg = loadImage("images/deer.png");
         
         // Setup start button size and position
-        startButton = new Button(this, 250, 450, "images/button_control.png");
+        startButton = new Button(this, 250, 460, "images/button_control.png");
         startButton.w = 300;
-        startButton.h = 70;
+        startButton.h = 65;
         
-        // Setup choice buttons for all stages
-        c1Opt1 = new Button(this, 80, 460, "images/button_option.png");
-        c1Opt2 = new Button(this, 420, 460, "images/button_option.png");
-        
-        c2Opt1 = new Button(this, 80, 460, "images/button_option.png");
-        c2Opt2 = new Button(this, 420, 460, "images/button_option.png");
-        
-        c3Opt1 = new Button(this, 80, 460, "images/button_option.png");
-        c3Opt2 = new Button(this, 420, 460, "images/button_option.png");
-        
-        // Setup restart button
+        // Setup restart button size and position
         restartButton = new Button(this, 250, 470, "images/button_control.png");
         restartButton.w = 300;
-        restartButton.h = 70;
+        restartButton.h = 65;
+        
+        // Setup choice buttons for choices 1, 2, and 3
+        c1Opt1 = new Button(this, 80, 470, "images/button_option.png");
+        c1Opt2 = new Button(this, 420, 470, "images/button_option.png");
+        
+        c2Opt1 = new Button(this, 80, 470, "images/button_option.png");
+        c2Opt2 = new Button(this, 420, 470, "images/button_option.png");
+        
+        c3Opt1 = new Button(this, 80, 470, "images/button_option.png");
+        c3Opt2 = new Button(this, 420, 470, "images/button_option.png");
     }
 
-    // Main draw loop to render graphics
+    // Main game loop to draw everything
     @Override
     public void draw() {
-        // Change background based on the current stage
+        // Change background based on stage
         if (stage == 3) {
             if (bgDrought != null) image(bgDrought, 0, 0, width, height);
         } else {
             if (bgForest != null) image(bgForest, 0, 0, width, height);
         }
         
-        // Draw the text box frame
-        fill(255, 255, 255, 230); 
+        // Main white text box container
+        fill(255, 255, 255, 235); 
         stroke(34, 76, 56);
-        strokeWeight(3);
-        rect(50, 50, 700, 380, 15);
+        strokeWeight(4);
+        rect(50, 50, 700, 390, 15);
         
-        // Draw Maria character
+        // Show score bar during the choices
+        if (stage >= 1 && stage <= 3) {
+            drawKarmaHUD();
+        }
+        
+        // Draw Maria on screen
         mariaCharacter.draw(this);
         
-        // Stage 0: Intro Screen
+        // Stage 0: Main menu screen
         if (stage == 0) {
             mariaCharacter.x = 510;
             mariaCharacter.y = 120;
@@ -107,56 +116,63 @@ public class MariaMakilingGame extends PApplet {
             if (villagerImg != null) {
                 image(villagerImg, 90, 180, 110, 190); 
                 
-                // Villager collision detection check
+                // Alert if Maria walks into the villager
                 if (mariaCharacter.isCollidingWith(90, 180, 110, 190)) {
-                    fill(255, 0, 0);
-                    textSize(14);
-                    textAlign(LEFT, TOP);
-                    text("💥 Touching Villager! Press Begin Journey to talk!", mouseX, mouseY); 
+                    fill(255, 235, 235);
+                    stroke(200, 0, 0);
+                    strokeWeight(1);
+                    rect(60, 385, 380, 26, 5);
+                    fill(200, 0, 0);
+                    textSize(13);
+                    textAlign(LEFT, CENTER);
+                    text(" Touching Villager! Press Begin Journey to talk!", 70, 396); 
                 }
             }
             
             fill(34, 76, 56);
             textSize(24);
             textAlign(LEFT, TOP);
-            text("Welcome to Mount Makiling", 230, 90);
+            text("Welcome to Mount Makiling", 230, 85);
+            
+            currentStoryText = "Hello!\n\nUse your LEFT and RIGHT arrow keys to move Maria around the screen. Try walking into the villager to check your collision detection system, then click below to start.";
+            runTypewriterEffect();
             
             fill(60);
-            textSize(16);
-            String intro = "Hello, Marky!\n\nUse your LEFT and RIGHT arrow keys to move Maria around the screen. Try walking into the villager to check your collision detection system, then click below to start.";
-            text(intro, 230, 140, 480, 240);
+            textSize(15);
+            text(displayedStoryText, 230, 135, 480, 230);
             
             startButton.draw();
             fill(255);
             textSize(16);
             textAlign(CENTER, CENTER);
-            text("Begin Journey", 400, 485); 
+            text("Begin Journey", 400, 492); 
         } 
-        // Stage 1: First Choice (Sacred Timber)
+        // Stage 1: First Choice
         else if (stage == 1) {
-            mariaCharacter.x = 80;
-            mariaCharacter.y = 130;
+            mariaCharacter.x = 70;
+            mariaCharacter.y = 120;
             
             fill(34, 76, 56);
             textSize(22);
             textAlign(LEFT, TOP);
-            text("Choice 1: The Sacred Timber", 240, 80);
+            text("Choice 1: The Sacred Timber", 270, 85);
+            
+            currentStoryText = "A wealthy merchant offers you 500 gold coins if you secretly chop down a rare, ancient tree nested up on the ridge.\n\nYour family is deeply struggling to get by this season, but this sacred tree has stood safeguarding the ecosystem for hundreds of years.";
+            runTypewriterEffect();
             
             fill(50);
             textSize(15);
-            String textC1 = "A wealthy merchant offers you 500 gold coins if you secretly chop down a rare, ancient tree nested up on the ridge.\n\nYour family is deeply struggling to get by this season, but this sacred tree has stood safeguarding the ecosystem for hundreds of years.";
-            text(textC1, 240, 130, 470, 260); 
+            text(displayedStoryText, 270, 135, 450, 230); 
             
             c1Opt1.draw();
             c1Opt2.draw();
-            
             fill(0);
             textSize(14);
             textAlign(CENTER, CENTER);
-            text("Protect the Tree", 230, 492);
-            text("Chop Down for Gold", 570, 492);
+            text("Protect the Tree", 230, 502);
+            text("Chop Down for Gold", 570, 502);
         }
-        // Stage 2: Second Choice (Wounded Deer)
+        // Stage 2: Second Choice
         else if (stage == 2) {
             mariaCharacter.x = 510; 
             mariaCharacter.y = 120;
@@ -164,98 +180,148 @@ public class MariaMakilingGame extends PApplet {
             fill(34, 76, 56);
             textSize(22);
             textAlign(LEFT, TOP);
-            text("Choice 2: The Wounded Creature", 80, 80);
+            text("Choice 2: The Wounded Creature", 80, 85);
+            
+            currentStoryText = "Deep along the river trail, you discover a wild forest deer crying in intense pain, its leg trapped in a wire poacher trap.\n\nTo save its life, you must sacrifice your last remaining container of precious medical herbs.";
+            runTypewriterEffect();
             
             fill(50);
             textSize(15);
-            String textC2 = "Deep along the river trail, you discover a wild forest deer crying in intense pain, its leg trapped in a wire poacher trap.\n\nTo save its life, you must sacrifice your last remaining container of precious medical herbs.";
-            text(textC2, 80, 130, 400, 260);
+            text(displayedStoryText, 80, 135, 410, 230);
 
             if (deerImg != null) {
-                image(deerImg, 510, 230, 160, 130);
+                image(deerImg, 510, 240, 160, 130);
                 
-                // Deer collision detection check
-                if (mariaCharacter.isCollidingWith(510, 230, 160, 130)) {
-                    fill(255, 0, 0);
-                    textSize(14);
-                    textAlign(LEFT, TOP);
-                    text("? Maria is checking on the deer!", mouseX, mouseY); 
+                // Alert if Maria walks into the deer
+                if (mariaCharacter.isCollidingWith(510, 240, 160, 130)) {
+                    fill(255, 235, 235);
+                    stroke(200, 0, 0);
+                    strokeWeight(1);
+                    rect(80, 385, 270, 26, 5);
+                    fill(200, 0, 0);
+                    textSize(13);
+                    textAlign(LEFT, CENTER);
+                    text("🦌 Maria is checking on the deer!", 90, 396); 
                 }
             }
 
             c2Opt1.draw();
             c2Opt2.draw();
-            
             fill(0);
             textSize(14);
             textAlign(CENTER, CENTER);
-            text("Heal Wounded Deer", 230, 492);
-            text("Ignore and Walk Away", 570, 492);
+            text("Heal Wounded Deer", 230, 502);
+            text("Ignore and Walk Away", 570, 502);
         } 
-        // Stage 3: Third Choice (Summer Drought)
+        // Stage 3: Third Choice
         else if (stage == 3) {
-            mariaCharacter.x = 80;
-            mariaCharacter.y = 130;
+            mariaCharacter.x = 70;
+            mariaCharacter.y = 120;
 
             fill(34, 76, 56);
             textSize(22);
             textAlign(LEFT, TOP);
-            text("Choice 3: The Summer Drought", 240, 80);
+            text("Choice 3: The Summer Drought", 270, 85);
+            
+            currentStoryText = "A massive heatwave strikes the valley, drying up the town water well. Families are parched and local crops are dying.\n\nYou possess a secret rain-barrel hidden safely in your cellar. Do you share it?";
+            runTypewriterEffect();
             
             fill(50);
             textSize(15);
-            String textC3 = "A massive heatwave strikes the valley, drying up the town water well. Families are parched and local crops are dying.\n\nYou possess a secret rain-barrel hidden safely in your cellar. Do you share it?";
-            text(textC3, 240, 130, 470, 260);
+            text(displayedStoryText, 270, 135, 450, 230);
             
             c3Opt1.draw();
             c3Opt2.draw();
-            
             fill(0);
             textSize(14);
             textAlign(CENTER, CENTER);
-            text("Share Water Supply", 230, 492);
-            text("Keep Resources Hidden", 570, 492);
+            text("Share Water Supply", 230, 502);
+            text("Keep Resources Hidden", 570, 502);
         }
-        // Stage 4: Results screen and endings
+        // Stage 4: Results screen
         else if (stage == 4) {
+            mariaCharacter.x = 295;
+            mariaCharacter.y = 195;
+            
             fill(34, 76, 56);
             textSize(24);
             textAlign(CENTER, TOP);
-            text("THE FINAL JUDGMENT", width / 2, 80);
+            text("THE FINAL JUDGMENT", width / 2, 75);
             textSize(16);
             
-            // Check points to display good, bad, or neutral ending
+            // Branch to different text endings depending on score points
             if (reputation >= 2) {
                 fill(20, 140, 40);
-                text(" GOOD ENDING: Blessing of the Goddess 🌟", width / 2, 130);
-                fill(60);
-                String goodEnding = "Because you protected the forest, saved the weak, and shared resources, Maria Makiling reveals her true nature to bless your line.\n\nYour valley streams run clean forever.";
-                text(goodEnding, 100, 180, 600, 200);
+                text(" GOOD ENDING: Blessing of the Goddess ", width / 2, 115);
+                currentStoryText = "Because you protected the forest, saved the weak, and shared resources, Maria Makiling reveals her true nature to bless your line. Your valley streams run clean forever.";
             } 
             else if (reputation < 0) {
                 fill(200, 40, 40);
-                text(" BAD ENDING: Curse of Mount Makiling 💀", width / 2, 130);
-                fill(60);
-                String badEnding = "Your choices favored greed over nature. Maria withdraws her presence from the valley completely.\n\nThe lakes dry up, and your gold coins cannot buy water.";
-                text(badEnding, 100, 180, 600, 200);
+                text(" BAD ENDING: Curse of Mount Makiling ", width / 2, 115);
+                currentStoryText = "Your choices favored greed over nature. Maria withdraws her presence from the valley completely. The lakes dry up, and your gold coins cannot buy water.";
             } 
             else {
                 fill(160, 120, 20);
-                text("️ NEUTRAL ENDING: The Difficult Middle Path ⚖️", width / 2, 130);
-                fill(60);
-                String neutralEnding = "You balanced self-interest with kindness. The forest doesn't curse you, but it doesn't offer help either.\n\nYour village must labor intensely to survive.";
-                text(neutralEnding, 100, 180, 600, 200);
+                text("️ NEUTRAL ENDING: The Difficult Middle Path ️", width / 2, 115);
+                currentStoryText = "You balanced self-interest with kindness. The forest doesn't curse you, but it doesn't offer help either. Your village must labor intensely to survive.";
             }
+            
+            runTypewriterEffect();
+            fill(60);
+            textSize(15);
+            text(displayedStoryText, 90, 145, 620, 100);
             
             restartButton.draw();
             fill(255);
             textSize(16);
             textAlign(CENTER, CENTER);
-            text("Play Again", 400, 505);
+            text("Play Again", 400, 502);
         }
     }
 
-    // Handles arrow key presses for movement with screen boundaries
+    //Types out text letter by letter
+    public void runTypewriterEffect() {
+        if (stage != lastStageChecked) {
+            displayedStoryText = "";
+            textCounter = 0;
+            lastStageChecked = stage;
+        }
+        
+        if (textCounter < currentStoryText.length()) {
+            if (frameCount % 2 == 0) { 
+                textCounter++;
+                displayedStoryText = currentStoryText.substring(0, textCounter);
+            }
+        }
+    }
+
+    // Draws the visual tracker UI bar at the top
+    public void drawKarmaHUD() {
+        stroke(180);
+        strokeWeight(1);
+        fill(235);
+        rect(300, 405, 200, 14, 8);
+        
+        float fillWidth = map(reputation, -3, 3, -100, 100);
+        
+        if (reputation > 0) {
+            fill(46, 184, 114); 
+            rect(400, 405, fillWidth, 14, 0, 8, 8, 0);
+        } else if (reputation < 0) {
+            fill(214, 69, 65); 
+            rect(400, 405, fillWidth, 14, 8, 0, 0, 8);
+        }
+        
+        stroke(120);
+        line(400, 405, 400, 419);
+        
+        fill(120);
+        textSize(10);
+        textAlign(CENTER, BOTTOM);
+        text("KARMA MONITOR", 400, 402);
+    }
+
+    // Keyboard keys handler for movement controls
     @Override
     public void keyPressed() {
         if (key == CODED) {
@@ -267,7 +333,7 @@ public class MariaMakilingGame extends PApplet {
         }
     }
 
-    // Handles button click detection for choice tracking and switching stages
+    // Mouse button click tracker to handle game progression
     @Override
     public void mousePressed() {
         if (stage == 0) {
@@ -313,7 +379,7 @@ public class MariaMakilingGame extends PApplet {
         }
     }
 
-    // Swaps character model variant based on final reputation score
+    // Swaps character graphic form based on score points
     public void updateEndingSprite() {
         if (reputation >= 2) {
             mariaCharacter.updateForm("images/maria_good.png");
@@ -324,6 +390,8 @@ public class MariaMakilingGame extends PApplet {
         }
     }
 }
+
+
 
 
 
